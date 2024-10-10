@@ -18,12 +18,14 @@ const {
   EmbedBuilder,
   Partials,
 } = require('discord.js');
+const internal = require('node:stream');
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.MessageContent,
   ],
   partials: [Partials.Message, Partials.Channel, Partials.Reaction],
 });
@@ -115,11 +117,31 @@ const submissionBuilder = (interaction) => {
   channel.send({ embeds: [embed] });
 };
 
+client.on('messageCreate', async (message) => {
+  const channelId = message.channelId;
+  const author = message.author.id;
+
+  if (channelId !== '1294018363072315483') return;
+
+  if (author !== '1267624772343300148') {
+    const messageToDelete = message;
+
+    message
+      .reply(
+        'This channel only allows the /join-team command!\n-# This message will auto delete in 10s.'
+      )
+      .then((msg) => {
+        messageToDelete.delete();
+        setTimeout(() => msg.delete(), 10000);
+      });
+  }
+});
+
 client.on(Events.InteractionCreate, async (interaction) => {
   if (interaction.isAutocomplete()) {
     const command = client.commands.get(interaction.commandName);
 
-    if (!command) return console.log('Command was not found');
+    if (!command) return console.log('AutoComplete command was not found');
 
     if (!command.autocomplete)
       return console.error(
@@ -136,7 +158,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
   if (interaction.isChatInputCommand()) {
     const command = client.commands.get(interaction.commandName);
 
-    if (!command) return console.log('Command was not found');
+    if (!command) return console.log('ChatInput command was not found');
 
     try {
       await command.execute(interaction);
